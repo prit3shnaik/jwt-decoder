@@ -1,49 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JWT Decoder & Analyzer</title>
   <meta name="description" content="Decode, inspect, and verify HS256 JSON Web Tokens directly in your browser.">
-
-  <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- ============================================== -->
-  <!-- FAVICON — Pick ONE method, delete the others   -->
-  <!-- ============================================== -->
-
-  <!-- METHOD A: Custom SVG favicon (no external files needed) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2300e59a'/><text x='50' y='66' font-family='monospace' font-size='36' font-weight='bold' fill='%23070b14' text-anchor='middle'>JWT</text></svg>">
-
-  <!-- METHOD B: Custom uploaded image (uncomment after uploading files) -->
-  <!-- <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png"> -->
-  <!-- <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png"> -->
-  <!-- <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"> -->
-
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div class="container">
     <header>
-      <h1>JWT Decoder & Analyzer</h1>
-      <p>Decode, inspect, and verify HS256 JSON Web Tokens instantly</p>
+      <div class="header-top">
+        <div>
+          <h1>JWT Decoder & Analyzer</h1>
+          <p>Decode, inspect, and verify HS256 JSON Web Tokens instantly</p>
+        </div>
+        <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Toggle light and dark mode">
+          <div class="toggle-track">
+            <span class="toggle-icon sun">☀️</span>
+            <span class="toggle-icon moon">🌙</span>
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main>
-      <!-- Input Section -->
       <section class="input-section" aria-label="JWT Input">
         <label for="jwt-input">Paste your JWT token</label>
-        <textarea
-          id="jwt-input"
-          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-          spellcheck="false"
-          aria-describedby="input-help"
-        ></textarea>
+        <textarea id="jwt-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." spellcheck="false" aria-describedby="input-help"></textarea>
         <div class="input-actions" id="input-help">
           <button class="btn" id="paste-btn" type="button">Paste from Clipboard</button>
           <button class="btn" id="sample-btn" type="button">Load Sample Token</button>
@@ -51,8 +41,27 @@
         </div>
       </section>
 
-      <!-- Results (hidden until a valid token is entered) -->
       <section id="results" style="display:none" aria-label="Decoded Results">
+        
+        <!-- Token Metrics Graph -->
+        <div class="metrics-panel" id="metrics-panel">
+          <div class="metric-card">
+            <span class="metric-label">Header</span>
+            <span class="metric-value" id="met-header">0 B</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Payload</span>
+            <span class="metric-value" id="met-payload">0 B</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Signature</span>
+            <span class="metric-value" id="met-signature">0 B</span>
+          </div>
+          <div class="metric-card metric-total">
+            <span class="metric-label">Total Size</span>
+            <span class="metric-value" id="met-total">0 B</span>
+          </div>
+        </div>
 
         <!-- Token Structure Bar -->
         <div class="token-structure" id="token-structure" aria-hidden="true">
@@ -72,7 +81,6 @@
 
         <!-- Header + Payload Grid -->
         <div class="panels-grid">
-          <!-- Header Panel -->
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title"><span class="dot header-dot"></span>Header</span>
@@ -81,13 +89,10 @@
                 <button class="copy-btn" id="copy-header" type="button">Copy Base64</button>
               </div>
             </div>
-            <div class="panel-body">
-              <pre id="header-json"></pre>
-            </div>
+            <div class="panel-body"><pre id="header-json"></pre></div>
             <span id="header-raw" style="display:none" aria-hidden="true"></span>
           </div>
 
-          <!-- Payload Panel -->
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title"><span class="dot payload-dot"></span>Payload</span>
@@ -96,8 +101,9 @@
                 <button class="copy-btn" id="copy-payload" type="button">Copy Base64</button>
               </div>
             </div>
-            <div class="panel-body">
-              <pre id="payload-json"></pre>
+            <div class="panel-body"><pre id="payload-json" contenteditable="true" spellcheck="false" id="payload-editor"></pre></div>
+            <div class="panel-footer">
+              <button class="btn btn-sm" id="encode-btn" type="button">Generate Modified Token (Unsigned)</button>
             </div>
             <span id="payload-raw" style="display:none" aria-hidden="true"></span>
           </div>
@@ -107,38 +113,55 @@
         <div class="panel panel-full">
           <div class="panel-header">
             <span class="panel-title"><span class="dot signature-dot"></span>Signature</span>
-            <div class="panel-actions">
-              <button class="copy-btn" id="copy-signature" type="button">Copy</button>
+            <div class="panel-actions"><button class="copy-btn" id="copy-signature" type="button">Copy</button></div>
+          </div>
+          <div class="sig-display"><span class="sig-value" id="signature-value"></span></div>
+          <p class="sig-meta" id="signature-length"></p>
+        </div>
+
+        <!-- TIMELINE GRAPH -->
+        <div class="graph-panel" id="timeline-panel" style="display:none">
+          <div class="graph-title">Token Lifespan Graph</div>
+          <div class="timeline-container">
+            <div class="timeline-bar-bg">
+              <div class="timeline-active" id="timeline-active"></div>
+              <div class="timeline-marker" id="timeline-now" style="left: 50%">
+                <div class="marker-line"></div>
+                <div class="marker-label">NOW</div>
+              </div>
+            </div>
+            <div class="timeline-labels">
+              <span id="timeline-start">Issued</span>
+              <span id="timeline-end">Expires</span>
             </div>
           </div>
-          <div class="sig-display">
-            <span class="sig-value" id="signature-value"></span>
-          </div>
-          <p class="sig-meta" id="signature-length"></p>
         </div>
 
         <!-- Analysis Panel -->
         <div class="analysis-panel">
-          <div class="analysis-header">Claims Analysis</div>
+          <div class="analysis-header">Claims Analysis & Threat Detection</div>
           <div id="analysis-content"></div>
         </div>
 
-        <!-- Verify Panel (shown only for HS256 tokens) -->
+        <!-- Verify Panel -->
         <div class="verify-panel" id="verify-panel" style="display:none">
           <div class="verify-title">Signature Verification</div>
-          <p class="verify-desc">Enter the secret key used to sign this token. The verification runs server-side via a secure Netlify Function.</p>
+          <p class="verify-desc">Enter the secret key used to sign this token. Runs securely via Netlify Function.</p>
           <div class="verify-input-row">
-            <input
-              type="password"
-              id="secret-input"
-              placeholder="Enter your HS256 secret key"
-              autocomplete="off"
-              aria-label="Secret key for verification"
-            >
+            <input type="password" id="secret-input" placeholder="Enter your HS256 secret key" autocomplete="off" aria-label="Secret key for verification">
             <button class="toggle-secret" id="toggle-secret-btn" type="button">Show</button>
           </div>
           <button class="btn btn-accent" id="verify-btn" type="button">Verify Signature</button>
           <div id="verify-result" style="margin-top: 16px;"></div>
+        </div>
+
+        <!-- Encoded Output -->
+        <div class="panel panel-full" id="encoded-output" style="display:none">
+          <div class="panel-header">
+            <span class="panel-title"><span class="dot payload-dot"></span>Modified Token Output</span>
+            <div class="panel-actions"><button class="copy-btn" id="copy-encoded" type="button">Copy</button></div>
+          </div>
+          <div class="panel-body"><pre id="encoded-value" style="word-break: break-all;"></pre></div>
         </div>
 
       </section>
@@ -149,10 +172,7 @@
     </footer>
   </div>
 
-  <!-- Toast notification container -->
   <div id="toast-container" aria-live="polite"></div>
-
-  <!-- Application logic -->
   <script src="script.js"></script>
 </body>
 </html>
