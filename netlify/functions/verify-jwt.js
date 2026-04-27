@@ -76,8 +76,19 @@ exports.handler = async (event) => {
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
 
-    /* Compare computed signature with the one in the token */
-    const isValid = computedSig === signatureB64;
+        /* Compare computed signature with the one in the token */
+    let isValid = false;
+    try {
+      const sigBuf = Buffer.from(signatureB64);
+      const computedBuf = Buffer.from(computedSig);
+
+      // timingSafeEqual requires buffers of the exact same length
+      if (sigBuf.length === computedBuf.length) {
+        isValid = crypto.timingSafeEqual(sigBuf, computedBuf);
+      }
+    } catch (e) {
+      isValid = false;
+    }
 
     return {
       statusCode: 200,
@@ -88,12 +99,3 @@ exports.handler = async (event) => {
         error: isValid ? null : 'Signature does not match the provided secret'
       })
     };
-
-  } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ valid: false, error: 'Internal server error during verification' })
-    };
-  }
-};
